@@ -131,7 +131,8 @@ sub suffix($file) {
 for my $chfile (sort keys %depends) {
     if (suffix($chfile) eq 'c') {
         my $ofile = "target/$chfile";
-        $ofile =~ s/\.c\z/.o/ or die "bug";
+        # .s ? .o ?
+        $ofile =~ s/\.c\z/.s/ or die "bug";
         xprint "$ofile:";
         # track down ALL dependencies; but only once each
         my $seen= {};
