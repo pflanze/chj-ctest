@@ -14,7 +14,7 @@ use experimental 'signatures';
 use Getopt::Long;
 use Chj::xperlfunc qw(xgetfile_utf8 xprint xprintln);
 use Chj::xIOUtil qw(xputfile_utf8);
-use FP::Repl::Trap; #
+#use FP::Repl::Trap; #
 
 my ($email_full)= $copyright=~ / by ([^\n]*)/s;
 
@@ -161,9 +161,20 @@ sub line_to_perhaps_test($line) {
 sub cfile_tests ($path) {
     my @lines = split /\r?\n/, xgetfile_utf8($path);
     map {
+        # heh, bad naming but same principle of from => to mapping; pair??
+        Dependency($path, $_)
+    }
+    map {
         line_to_perhaps_test $_
     } @lines
 }
+
+sub Dependency_filebasename($dep) {
+    my $file = $dep->source;
+    $file=~ s/\.c$//;
+    $file=~ m{[/.]} and die "no support for paths currently: ".$dep->source;
+    $file
+}    
 
 if ($need_run_tests) {
     # generate run_tests.c, from all the .c files except itself, with
@@ -183,17 +194,24 @@ if ($need_run_tests) {
         "",
         (
          map {
-             "void __test_$_ (struct TestStatistics *);"
+             my $fnname = $_->dependency;
+             my $bn = Dependency_filebasename($_);
+             "void __test_${bn}_$fnname (struct TestStatistics *);"
          } @tests
         ),
         "",
         "",
         "void run_tests() {",
+        "    struct TestStatistics stats = { 0, 0 };",
         (
          map {
-             "    run_test(__test_$_);"
+             my $fnname = $_->dependency;
+             my $file = $_->source;
+             my $bn = Dependency_filebasename($_);
+             "    run_test_(\&stats, \"$fnname in \\\"$file\\\"\", __test_${bn}_$fnname);"
          } @tests
         ),
+        "    print_teststatistics(\&stats);",
         "}",
         ""
         );
