@@ -1,0 +1,146 @@
+#!/usr/bin/env perl
+
+my $copyright= <<'COPYRIGHT';
+# Copyright 2021 by Christian Jaeger <ch@christianjaeger.ch>
+# Published under the same terms as perl itself
+COPYRIGHT
+
+use strict;
+use utf8;
+use warnings;
+use warnings FATAL => 'uninitialized';
+use experimental 'signatures';
+
+use Getopt::Long;
+use Chj::xperlfunc qw(xgetfile_utf8 xprint xprintln);
+#use FP::Repl::Trap; #
+
+my ($email_full)= $copyright=~ / by ([^\n]*)/s;
+
+my ($mydir, $myname);
+BEGIN {
+    $0=~ /(.*?)([^\/]+)\z/s or die "?";
+    ($mydir, $myname)=($1,$2);
+}
+
+sub usage {
+    print STDERR map{"$_\n"} @_ if @_;
+    print "$myname target/foo.o ...
+
+  Parses the .c and .h files it finds via the given .o files, prints
+  make syntax of the dependencies.
+
+  ($email_full)
+";
+exit (@_ ? 1 : 0);
+}
+
+our $verbose=0;
+#our $opt_dry;
+GetOptions("verbose"=> \$verbose,
+	   "help"=> sub{usage},
+	   #"dry-run"=> \$opt_dry,
+	   ) or exit 1;
+usage unless @ARGV;
+
+sub o_to_perhaps_c ($path) {
+    # returns () for .s files; exception if not found
+    my $p = $path;
+    $p=~ s/\.o$// or die "invalid object path '$path'";
+    $p=~ s{^target/+}{} or die "invalid object path '$path'";
+    my $c = "$p.c";
+    if (-e $c) {
+        $c
+    } elsif (-e "$p.s") {
+        ()
+    } else {
+        die "could not find $p.{c,s} for object path '$path'"
+    }
+}
+
+package Dependency {
+    use FP::Struct ["source", "dependency" ] => qw(FP::Struct::Show);
+    _END_
+}
+Dependency::constructors->import();
+
+sub line_to_perhaps_dep($line) {
+    if (my ($path) = /^\s*#\s*include\s*"([^"]+)"/) {
+        $path
+    } else {
+        ()
+    }
+}
+
+sub chfile_dependencies ($path) {
+    my @lines = split /\r?\n/, xgetfile_utf8($path);
+    map {
+        Dependency($path, $_)
+    }
+    map {
+        line_to_perhaps_dep $_
+    } @lines
+}
+
+my @c_files = map {
+    o_to_perhaps_c $_
+} @ARGV;
+
+my @direct_deps = map { chfile_dependencies($_) } @c_files;
+
+my %depends;
+
+for (@direct_deps) {
+    $depends{$_->source}->{$_->dependency}++;
+}
+
+sub add_missing {
+    my %missing = map {
+        exists $depends{$_} ? () : ($_=>1)
+    } map {
+        keys %$_
+    } values %depends;
+
+    my @deps = map { chfile_dependencies($_) } keys %missing;
+
+    for (@deps) {
+        $depends{$_->source}->{$_->dependency}++;
+    }
+    scalar @deps
+}
+
+do {} while add_missing;
+
+sub printdeps_for($chfile, $seen) {
+    my $d = $depends{$chfile} or return;
+    # ^ OK, if foo.h has no includes then not here
+    for my $chfile (sort keys %$d) {
+        next if $seen->{$chfile};
+        $seen->{$chfile}= 1;
+        xprint " $chfile";
+        printdeps_for($chfile, $seen);
+    }
+}
+
+sub suffix($file) {
+    $file=~ s/.*\.// or die "file does not have a suffix: '$file'";
+    $file=~ /^\w+\z/ or die "bad suffix: '$file'";
+    $file
+}
+
+for my $chfile (sort keys %depends) {
+    if (suffix($chfile) eq 'c') {
+        my $ofile = "target/$chfile";
+        $ofile =~ s/\.c\z/.o/ or die "bug";
+        xprint "$ofile:";
+        # track down ALL dependencies; but only once each
+        my $seen= {};
+        printdeps_for($chfile, $seen);
+        xprintln;
+    }
+}
+
+#use FP::Repl; repl;
+#use Chj::ruse;
+#use Chj::Backtrace; 
+
