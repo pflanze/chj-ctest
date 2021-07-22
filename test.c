@@ -4,9 +4,37 @@
 
 void __test_assert_eq_failure(const char* file, int line,
                               const char* e1, const char* e2) {
-    printf("* test failure in %s line %i:\r\n", file, line);
-    printf("   %s == %s\r\n", e1, e2);
+    printf("* test failure in %s line %i:\r\n"
+           "   %s == %s\r\n",
+           file, line,
+           e1, e2);
 }
+
+void __test_assert_eq_fmt16_failure(const char* fmt,
+                                    const char* file, int line,
+                                    const char* e1, const char* e2,
+                                    uint16_t v1, uint16_t v2) {
+    __test_assert_eq_failure(file, line, e1, e2);
+    printf("   ");
+    printf(fmt, v1);
+    printf(" == ");
+    printf(fmt, v2);
+    printf("\r\n");
+}
+// copy-paste with type changed. Define via macro?
+void __test_assert_eq_fmt32_failure(const char* fmt,
+                                    const char* file, int line,
+                                    const char* e1, const char* e2,
+                                    uint32_t v1, uint32_t v2) {
+    __test_assert_eq_failure(file, line, e1, e2);
+    printf("   ");
+    printf(fmt, v1);
+    printf(" == ");
+    printf(fmt, v2);
+    printf("\r\n");
+}
+
+
 
 void run_test_(struct TestStatistics* stats,
                const char* testname_file,
