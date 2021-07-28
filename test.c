@@ -4,8 +4,8 @@
 
 void __test_assert_eq_failure(const char* file, int line,
                               const char* e1, const char* e2) {
-    printf("* test failure in %s line %i:\r\n"
-           "   %s == %s\r\n",
+    printf("* test failure in %s line %i:\n"
+           "   %s == %s\n",
            file, line,
            e1, e2);
 }
@@ -19,7 +19,7 @@ void __test_assert_eq_fmt16_failure(const char* fmt,
     printf(fmt, v1);
     printf(" == ");
     printf(fmt, v2);
-    printf("\r\n");
+    printf("\n");
 }
 // copy-paste with type changed. Define via macro?
 void __test_assert_eq_fmt32_failure(const char* fmt,
@@ -31,7 +31,7 @@ void __test_assert_eq_fmt32_failure(const char* fmt,
     printf(fmt, v1);
     printf(" == ");
     printf(fmt, v2);
-    printf("\r\n");
+    printf("\n");
 }
 
 
@@ -39,12 +39,12 @@ void __test_assert_eq_fmt32_failure(const char* fmt,
 void run_test_(struct TestStatistics* stats,
                const char* testname_file,
                test_function_t test) {
-    printf("Test %s\r\n", testname_file);
+    printf("Test %s\n", testname_file);
     test(stats);
 }
 
 void print_teststatistics(const struct TestStatistics* stats) {
-    printf("==> %i success(es), %i failure(s)\r\n",
+    printf("==> %i success(es), %i failure(s)\n",
            stats->num_successes,
            stats->num_failures);
 }
