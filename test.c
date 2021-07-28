@@ -44,7 +44,8 @@ void run_test_(struct TestStatistics* stats,
 }
 
 void print_teststatistics(const struct TestStatistics* stats) {
-    printf("==> %i success(es), %i failure(s)\n",
+    printf("==> %s, %i success(es), %i failure(s)\n",
+           stats->num_failures ? "FAIL" : "OK",
            stats->num_successes,
            stats->num_failures);
 }
