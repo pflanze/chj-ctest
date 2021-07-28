@@ -54,7 +54,7 @@ sub o_to_perhaps_c ($path) {
     $p=~ s{^target/+}{} or die "invalid object path '$path'";
     my $c = "$p.c";
     if ($c eq "run_tests.c") {
-        $c
+        $c # XX shouldn't that be ignored?
     } elsif (-e $c) {
         $c
     } elsif (-e "$p.s") {
