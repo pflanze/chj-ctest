@@ -14,7 +14,6 @@ use experimental 'signatures';
 use Getopt::Long;
 use Chj::xperlfunc qw(xgetfile_utf8 xprint xprintln);
 use Chj::xIOUtil qw(xputfile_utf8);
-#use FP::Repl::Trap; #
 
 my ($email_full)= $copyright=~ / by ([^\n]*)/s;
 
@@ -34,6 +33,10 @@ sub usage {
   It also generates (overwrites) the file run_tests.c if
   target/run_tests.o is given.
 
+  Options:
+
+    --trap    Use FP::Repl::Trap.
+
   ($email_full)
 ";
 exit (@_ ? 1 : 0);
@@ -41,11 +44,15 @@ exit (@_ ? 1 : 0);
 
 our $verbose=0;
 #our $opt_dry;
+our $opt_trap;
 GetOptions("verbose"=> \$verbose,
 	   "help"=> sub{usage},
+           "trap"=> \$opt_trap,
 	   #"dry-run"=> \$opt_dry,
 	   ) or exit 1;
 usage unless @ARGV;
+
+require FP::Repl::Trap if $opt_trap;
 
 sub o_to_perhaps_c ($path) {
     # returns () for .s files; exception if not found
