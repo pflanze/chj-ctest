@@ -293,15 +293,15 @@ sub suffix($file) {
 
 # For each .o file, print the dependencies (keys %depends is coming
 # from @c_files which is coming via o_to_perhaps_c from @ARGV):
-for my $chfile (sort keys %depends) {
-    if (suffix($chfile) eq 'c') {
-        my $ofile = "target/".basename($chfile);
+for my $chpath (sort keys %depends) {
+    if (suffix($chpath) eq 'c') {
+        my $ofile = "target/".basename($chpath);
         $ofile =~ s/\.c\z/.o/ or die "bug";
         xprint "$ofile:";
         # Print all dependencies, also indirect ones; but each only
         # once for this $ofile:
         my $seen= {};
-        printdeps_for($chfile, $seen);
+        printdeps_for($chpath, $seen);
         xprintln;
     }
 }
