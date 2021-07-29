@@ -5,7 +5,7 @@
 You use `TEST(shortname) { .... ASSERT_EQ(a,b) ... }`. You can use a short name, it is quasi-local to the file: the file name is being made part of the symbol name, via the Makefile:
 
     target/%.s: %.c
-        cc65 $(CFLAGS) -DFIL=`../chj-ctest/bin/path-to-FIL $<`_ -o $@ $<
+        cc65 $(CFLAGS) -DFIL=`../chj-ctest/bin/path-to-FIL $<` -o $@ $<
 
 Also add the following to the Makefile:
 

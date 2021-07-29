@@ -300,7 +300,7 @@ if ($opt_run_tests) {
          map {
              my $fnname = $_->dependency;
              my $bn = Dependency_to_FIL($_);
-             "void __test_${bn}_$fnname (struct TestStatistics *);"
+             "void __test_$bn$fnname (struct TestStatistics *);"
          } @tests
         ),
         "",
@@ -312,7 +312,7 @@ if ($opt_run_tests) {
              my $fnname = $_->dependency;
              my $file = $_->source;
              my $bn = Dependency_to_FIL($_);
-             "    run_test_(\&stats, \"$fnname in \\\"$file\\\"\", __test_${bn}_$fnname);"
+             "    run_test_(\&stats, \"$fnname in \\\"$file\\\"\", __test_$bn$fnname);"
          } @tests
         ),
         "    print_teststatistics(\&stats);",

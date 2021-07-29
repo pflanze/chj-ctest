@@ -37,7 +37,7 @@ sub path_to_FIL($path) {
     $path=~ /^\w+\z/
         or die "after mangling, path still contains non-word characters: '$path'";
 
-    $path
+    $path."_"
 }
 
 
