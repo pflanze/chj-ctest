@@ -32,6 +32,8 @@ sub path_to_FIL($path) {
     $path =~ s/\.c\z//
         or die "need a file with suffix .c, got '$path'";
 
+    $path = "./$path" unless $path =~ m{/};
+    
     $path=~ tr{./-}{D_M};
 
     $path=~ /^\w+\z/
