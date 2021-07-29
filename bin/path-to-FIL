@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+
+my $copyright= <<'COPYRIGHT';
+# Copyright 2021 by Christian Jaeger <ch@christianjaeger.ch>
+# Published under the same terms as perl itself
+COPYRIGHT
+
+use strict;
+use utf8;
+use warnings;
+use warnings FATAL => 'uninitialized';
+use experimental 'signatures';
+
+my ($mydir, $myname);
+BEGIN {
+    $0=~ /(.*?)([^\/]+)\z/s or die "?";
+    ($mydir, $myname)=($1,$2);
+}
+use lib $mydir;
+use Chj::CTest qw(path_to_FIL);
+
+@ARGV == 1 or die <<"END";
+usage: $0 relative-path.[chs]
+
+Print a mangled version of the given path to set -DFIL to, so that the
+macros from test.h can use it for building the correct test symbol
+name.
+
+END
+
+my ($path)= @ARGV;
+
+print path_to_FIL($path), "\n"
+    or die "stdout: $!";
+    
+#use FP::Repl; repl;
+#use Chj::ruse;
+#use Chj::Backtrace; 
+

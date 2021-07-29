@@ -23,6 +23,8 @@ BEGIN {
     $0=~ /(.*?)([^\/]+)\z/s or die "?";
     ($mydir, $myname)=($1,$2);
 }
+use lib $mydir;
+use Chj::CTest qw(path_to_FIL);
 
 sub usage {
     print STDERR map{"$_\n"} @_ if @_;
@@ -206,13 +208,8 @@ sub cfile_tests ($path) {
     } @lines
 }
 
-sub Dependency_filebasename($dep) {
-    my $file = $dep->source;
-    $file=~ s/\.c$//;
-    #$file=~ s{[/.-]}{_}sg;
-    # ^ No, that's not what the C macro can do.
-    $file=~ s{.*/}{}s;
-    $file
+sub Dependency_to_FIL($dep) {
+    path_to_FIL($dep->source)
 }    
 
 if ($opt_run_tests) {
@@ -234,7 +231,7 @@ if ($opt_run_tests) {
         (
          map {
              my $fnname = $_->dependency;
-             my $bn = Dependency_filebasename($_);
+             my $bn = Dependency_to_FIL($_);
              "void __test_${bn}_$fnname (struct TestStatistics *);"
          } @tests
         ),
@@ -246,7 +243,7 @@ if ($opt_run_tests) {
          map {
              my $fnname = $_->dependency;
              my $file = $_->source;
-             my $bn = Dependency_filebasename($_);
+             my $bn = Dependency_to_FIL($_);
              "    run_test_(\&stats, \"$fnname in \\\"$file\\\"\", __test_${bn}_$fnname);"
          } @tests
         ),
