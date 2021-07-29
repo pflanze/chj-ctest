@@ -29,14 +29,32 @@ our %EXPORT_TAGS=(default => \@EXPORT, all=>[@EXPORT,@EXPORT_OK]);
 
 sub path_to_canonical_relpath($path) {
 
-    $path =~ m{^/} and die "absolute paths not accepted: '$path'";
-    
-    $path = "./$path" unless $path =~ m{/};
-
-    $path =~ s{/+}{/}sg;
+    if ($path =~ m{/}) {
+        $path =~ m{^/} and die "absolute paths not accepted: '$path'";
+        $path =~ s{/+}{/}sg;
+        do {} while $path =~ s{(^|/)\./}{$1}s;
+        $path = "./$path" unless $path =~ m{/};
+    } else {
+        $path = "./$path";
+    }
     
     $path
 }
+
+# main> path_to_canonical_relpath "././vm.h"
+# $VAR1 = './vm.h';
+# main> path_to_canonical_relpath "./../vm.h"
+# $VAR1 = '../vm.h';
+# main> path_to_canonical_relpath ".././vm.h"
+# $VAR1 = '../vm.h';
+# main> path_to_canonical_relpath "../././vm.h"
+# $VAR1 = '../vm.h';
+# main> path_to_canonical_relpath ".././foo./vm.h"
+# $VAR1 = '../foo./vm.h';
+# main> path_to_canonical_relpath ".././foo/./vm.h"
+# $VAR1 = '../foo/vm.h';
+# main> path_to_canonical_relpath "..//.///foo///.//vm.h"
+# $VAR1 = '../foo/vm.h';
 
 sub path_to_FIL($path) {
     my $p = path_to_canonical_relpath($path);
