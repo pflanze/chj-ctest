@@ -231,9 +231,8 @@ my %depends; # source relpath => dependency relpath => dependency CHFile
 # (^ source and dependency can be either a .c or .h file)
 
 for (@direct_deps) {
-    $depends{$_->source->relpath}
-    ->{$_->dependency->relpath}
-    = $_->dependency;
+    my $dependency= $_->dependency;
+    $depends{$_->source->relpath}->{$dependency->relpath} = $dependency;
 }
 
 sub chFile($path) {
