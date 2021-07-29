@@ -24,22 +24,32 @@ use experimental 'signatures';
 use Exporter "import";
 
 our @EXPORT=qw();
-our @EXPORT_OK=qw(path_to_FIL);
+our @EXPORT_OK=qw(path_to_canonical_relpath path_to_FIL);
 our %EXPORT_TAGS=(default => \@EXPORT, all=>[@EXPORT,@EXPORT_OK]);
 
-sub path_to_FIL($path) {
+sub path_to_canonical_relpath($path) {
 
-    $path =~ s/\.c\z//
+    $path =~ m{^/} and die "absolute paths not accepted: '$path'";
+    
+    $path = "./$path" unless $path =~ m{/};
+
+    $path =~ s{/+}{/}sg;
+    
+    $path
+}
+
+sub path_to_FIL($path) {
+    my $p = path_to_canonical_relpath($path);
+    
+    $p =~ s/\.c\z//
         or die "need a file with suffix .c, got '$path'";
 
-    $path = "./$path" unless $path =~ m{/};
-    
-    $path=~ tr{./-}{D_M};
+    $p=~ tr{./-}{D_M};
 
-    $path=~ /^\w+\z/
-        or die "after mangling, path still contains non-word characters: '$path'";
+    $p=~ /^\w+\z/
+        or die "after mangling, path still contains non-word characters: '$p'";
 
-    $path."_"
+    $p."_"
 }
 
 
