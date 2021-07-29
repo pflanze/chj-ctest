@@ -111,41 +111,69 @@ sub is_relpath_with_suffix($v) {
     not ref($v) and $v=~ m{^[^/].*/.*\.\w+\z}s
 }
 
-package PFLANZE::File {
-    use FP::Struct [[\&main::is_relpath_with_suffix, "relpath"]]
+sub relpath_with_suffix($suffix) {
+    # assume files in local dir are prepended with "./", thus paths
+    # always contain a slash
+    sub ($v) {
+        not ref($v) and $v=~ m{^[^/].*/.*\.\Q$suffix\E\z}s
+    }
+}
+
+package PFLANZE::SomeFile {
+    use FP::Struct []
         => qw(FP::Struct::Show);
     _END_
 }
-PFLANZE::File::constructors->import;
+#*is_SomeFile = instance_of("PFLANZE::SomeFile");
+
+#package PFLANZE::File {
+#    use FP::Struct [[\&main::is_relpath_with_suffix, "relpath"]]
+#        => qw(PFLANZE::SomeFile);
+#    _END_
+#}
+#PFLANZE::File::constructors->import;
 #*is_File = instance_of("PFLANZE::File");
 
 package PFLANZE::CHFile {
-    use FP::Struct [] => qw(PFLANZE::File);
+    use FP::Struct []
+        => qw(PFLANZE::SomeFile);
     _END_
 }
-PFLANZE::CHFile::constructors->import;
+#PFLANZE::CHFile::constructors->import;
 *is_CHFile = instance_of("PFLANZE::CHFile");
 
 package PFLANZE::CFile {
-    use FP::Struct [] => qw(PFLANZE::CHFile);
+    use FP::Struct [[main::relpath_with_suffix('c'), "relpath"]]
+        => qw(PFLANZE::CHFile);
     _END_
 }
 PFLANZE::CFile::constructors->import;
 #*is_CFile = instance_of("PFLANZE::CFile");
 
 package PFLANZE::HFile {
-    use FP::Struct [] => qw(PFLANZE::CHFile);
+    use FP::Struct [[main::relpath_with_suffix('h'), "relpath"]]
+        => qw(PFLANZE::CHFile);
     _END_
 }
 PFLANZE::HFile::constructors->import;
 #*is_HFile = instance_of("PFLANZE::HFile");
 
+package PFLANZE::OFile {
+    use FP::Struct [[main::relpath_with_suffix('o'), "relpath"]]
+        => qw(PFLANZE::SomeFile);
+    _END_
+}
+PFLANZE::OFile::constructors->import;
+#*is_OFile = instance_of("PFLANZE::OFile");
+
 package PFLANZE::SFile {
-    use FP::Struct [] => qw(PFLANZE::File);
+    use FP::Struct [[main::relpath_with_suffix('s'), "relpath"]]
+        => qw(PFLANZE::SomeFile);
     _END_
 }
 PFLANZE::SFile::constructors->import;
 #*is_SFile = instance_of("PFLANZE::SFile");
+
 
 package PFLANZE::Pairing {
     use FP::Struct ["source", "dependency"]
@@ -207,6 +235,10 @@ for (@direct_deps) {
     = $_->dependency;
 }
 
+sub chFile($path) {
+    ($path =~ /h\z/) ? HFile($path) : CFile($path)
+}
+
 sub add_missing {
     my %missing = map {
         my $chfile= $_;
@@ -217,7 +249,7 @@ sub add_missing {
     } values %depends;
 
     my @deps = map {
-        chfile_dependencies(include_perhaps_find $_, \&CHFile)
+        chfile_dependencies(include_perhaps_find $_, \&chFile)
     } keys %missing;
 
     for (@deps) {
