@@ -52,7 +52,11 @@ GetOptions("verbose"=> \$verbose,
 	   ) or exit 1;
 usage unless @ARGV;
 
-require FP::Repl::Trap if $opt_trap;
+if ($opt_trap) {
+    require FP::Repl::Trap;
+    no warnings;
+    *repl = \&FP::Repl::repl;
+}
 
 sub o_to_perhaps_c ($path) {
     # returns () for .s files; exception if not found
