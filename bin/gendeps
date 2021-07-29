@@ -24,6 +24,7 @@ BEGIN {
     ($mydir, $myname)=($1,$2);
 }
 use lib $mydir;
+use FP::Predicates qw(instance_of);
 use Chj::CTest qw(path_to_FIL);
 
 sub usage {
@@ -73,11 +74,12 @@ if ($opt_trap) {
 
 our @dirs = @opt_dirs ? @opt_dirs : ".";
 
-sub subpath_perhaps_find($orig_subpath, $subpath, $maybe_subpath_s) {
+sub subpath_perhaps_find($orig_subpath, $subpath, $maybe_subpath_s, $constr) {
     for my $dir (@dirs) {
         my $pp = "$dir/$subpath";
-        return $pp if -e $pp;
-        return () if (defined $maybe_subpath_s and -e "$dir/$maybe_subpath_s");
+        return $constr->($pp) if -e $pp;
+        return () if (defined $maybe_subpath_s
+                      and -e "$dir/$maybe_subpath_s");
     }
     die "could not find $subpath"
         .(defined $maybe_subpath_s ? " / $maybe_subpath_s" : "")
@@ -93,35 +95,98 @@ sub o_to_perhaps_c ($path) {
     $p=~ s{^target/+}{} or die "invalid object path '$path'";
     my $c = "$p.c";
     if ($c eq "run_tests.c") {
-        $c # XX shouldn't that be ignored?
+        CFile("./$c") # XX shouldn't that be ignored?
     } else {
-        subpath_perhaps_find $path, $c, "$p.s"
+        subpath_perhaps_find $path, $c, "$p.s", \&CFile
     }
 }
 
-sub include_perhaps_find($path) {
-    subpath_perhaps_find $path, $path, undef
+sub include_perhaps_find($path, $constr) {
+    subpath_perhaps_find $path, $path, undef, $constr
 }
 
-package Dependency {
-    use FP::Struct ["source", "dependency" ] => qw(FP::Struct::Show);
+sub is_relpath_with_suffix($v) {
+    # assume files in local dir are prepended with "./", thus paths
+    # always contain a slash
+    not ref($v) and $v=~ m{^[^/].*/.*\.\w+\z}s
+}
+
+package PFLANZE::File {
+    use FP::Struct [[\&main::is_relpath_with_suffix, "relpath"]]
+        => qw(FP::Struct::Show);
     _END_
 }
-Dependency::constructors->import();
+PFLANZE::File::constructors->import;
+#*is_File = instance_of("PFLANZE::File");
+
+package PFLANZE::CHFile {
+    use FP::Struct [] => qw(PFLANZE::File);
+    _END_
+}
+PFLANZE::CHFile::constructors->import;
+*is_CHFile = instance_of("PFLANZE::CHFile");
+
+package PFLANZE::CFile {
+    use FP::Struct [] => qw(PFLANZE::CHFile);
+    _END_
+}
+PFLANZE::CFile::constructors->import;
+#*is_CFile = instance_of("PFLANZE::CFile");
+
+package PFLANZE::HFile {
+    use FP::Struct [] => qw(PFLANZE::CHFile);
+    _END_
+}
+PFLANZE::HFile::constructors->import;
+#*is_HFile = instance_of("PFLANZE::HFile");
+
+package PFLANZE::SFile {
+    use FP::Struct [] => qw(PFLANZE::File);
+    _END_
+}
+PFLANZE::SFile::constructors->import;
+#*is_SFile = instance_of("PFLANZE::SFile");
+
+package PFLANZE::Pairing {
+    use FP::Struct ["source", "dependency"]
+        => qw(FP::Struct::Show);
+    _END_
+}
+PFLANZE::Pairing::constructors->import;
+#*is_Pairing = instance_of("PFLANZE::Pairing");
+
+package PFLANZE::Dependency {
+    use FP::Struct [[\&main::is_CHFile, "source"],
+                    [\&main::is_CHFile, "dependency"]]
+        => qw(FP::Struct::Show);
+    _END_
+}
+PFLANZE::Dependency::constructors->import;
+#*is_Dependency = instance_of("PFLANZE::Dependency");
 
 sub line_to_perhaps_dep($line) {
     if (my ($path) = /^\s*#\s*include\s*"([^"]+)"/) {
-        $path
+        my $s = suffix($path);
+        my $constr= ( $s eq "h" ? \&HFile :
+                      $s eq "c" ? \&CFile :
+                      die "unknown suffix '$s'");
+        if (my ($file) = include_perhaps_find($path, $constr)) {
+            $file
+        } else {
+            die "could not find file: '$path'";
+        }
     } else {
         ()
     }
 }
 
-sub chfile_dependencies ($path) {
-    return () if $path eq "run_tests.c"; # hacky :/
+sub chfile_dependencies ($chfile) {
+    is_CHFile($chfile) or die "type";
+    my $path = $chfile->relpath;
+    return () if $path eq "./run_tests.c"; # hacky :/
     my @lines = split /\r?\n/, xgetfile_utf8($path);
     map {
-        Dependency($path, $_)
+        Dependency($chfile, $_)
     }
     map {
         line_to_perhaps_dep $_
@@ -134,21 +199,25 @@ my @c_files = map {
 
 my @direct_deps = map { chfile_dependencies($_) } @c_files;
 
-my %depends;
+my %depends; # source relpath => dependency relpath => dependency CHFile
 
 for (@direct_deps) {
-    $depends{$_->source}->{$_->dependency}++;
+    $depends{$_->source->relpath}
+    ->{$_->dependency->relpath}
+    = $_->dependency;
 }
 
 sub add_missing {
     my %missing = map {
-        exists $depends{$_} ? () : ($_=>1)
+        my $chfile= $_;
+        exists $depends{$chfile->relpath} ? ()
+            : ($chfile->relpath => $chfile)
     } map {
-        keys %$_
+        values %$_
     } values %depends;
 
     my @deps = map {
-        chfile_dependencies(include_perhaps_find $_)
+        chfile_dependencies(include_perhaps_find $_, \&CHFile)
     } keys %missing;
 
     for (@deps) {
@@ -200,8 +269,7 @@ sub line_to_perhaps_test($line) {
 sub cfile_tests ($path) {
     my @lines = split /\r?\n/, xgetfile_utf8($path);
     map {
-        # heh, bad naming but same principle of from => to mapping; pair??
-        Dependency($path, $_)
+        Pairing($path, $_)
     }
     map {
         line_to_perhaps_test $_
