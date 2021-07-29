@@ -31,12 +31,12 @@ sub usage {
   Parses the .c and .h files it finds via the given .o files, prints
   make syntax of the dependencies.
 
-  It also generates (overwrites) the file run_tests.c if
-  target/run_tests.o or --run-tests is given.
+  It also generates (overwrites) the file run_tests.c if --run-tests
+  is given.
 
   Options:
 
-    --run-tests  Generate run_tests.c, even when run_tests.o isn't given
+    --run-tests  Generate run_tests.c
     -I path   Path to search for source files. Can be given multiple times.
               Default if none given: '.'
     --trap    Use FP::Repl::Trap.
@@ -130,10 +130,6 @@ my @c_files = map {
     o_to_perhaps_c $_
 } @ARGV;
 
-my $need_run_tests =
-    ($opt_run_tests
-     or exists +{ map {$_ => 1} @c_files }->{"run_tests.c"});
-
 my @direct_deps = map { chfile_dependencies($_) } @c_files;
 
 my %depends;
@@ -219,7 +215,7 @@ sub Dependency_filebasename($dep) {
     $file
 }    
 
-if ($need_run_tests) {
+if ($opt_run_tests) {
     # generate run_tests.c, from all the .c files except itself, with
     # all the given tests. Again does not parse CPP instructions that
     # might exclude them, d'oh, well. Assume all tests are used.
