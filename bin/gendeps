@@ -228,6 +228,7 @@ my @c_files = map {
 my @direct_deps = map { chfile_dependencies($_) } @c_files;
 
 my %depends; # source relpath => dependency relpath => dependency CHFile
+# (^ source and dependency can be either a .c or .h file)
 
 for (@direct_deps) {
     $depends{$_->source->relpath}
@@ -239,27 +240,41 @@ sub chFile($path) {
     ($path =~ /h\z/) ? HFile($path) : CFile($path)
 }
 
+# We're recording the dependencies of .c files in %depends, and here
+# now also indirect includes, which means we're starting to put .h
+# files and their dependencies, too:
 sub add_missing {
     my %missing = map {
-        my $chfile= $_;
-        exists $depends{$chfile->relpath} ? ()
-            : ($chfile->relpath => $chfile)
+        my $chfile= $_; # a `dependency CHFile`
+        is_CHFile($chfile) or die "bug";
+        my $path = $chfile->relpath;
+        # if we haven't recorded that file yet, we'll have to look at
+        # it:
+        (exists $depends{$path}
+         ? ()
+         : ($path => $chfile))
     } map {
         values %$_
     } values %depends;
 
+    # Now get (parse) the dependencies of those new files, too:
     my @deps = map {
-        chfile_dependencies(include_perhaps_find $_, \&chFile)
+        chfile_dependencies(include_perhaps_find($_, \&chFile))
     } keys %missing;
 
     for (@deps) {
-        $depends{$_->source}->{$_->dependency}++;
+        my $dependency= $_->dependency;
+        $depends{$_->source->relpath}->{$dependency->relpath} = $dependency;
     }
-    scalar @deps
+
+    @deps ? 1 : 0
 }
 
 do {} while add_missing;
 
+# Print dependencies for $chfile onto a single line, but this is part
+# of the right-hand side, for another .o file; $seen is used to avoid
+# indirect dependencies from showing up multiple times.
 sub printdeps_for($chfile, $seen) {
     my $d = $depends{$chfile} or return;
     # ^ OK, if foo.h has no includes then not here
@@ -277,12 +292,15 @@ sub suffix($file) {
     $file
 }
 
+# For each .o file, print the dependencies (keys %depends is coming
+# from @c_files which is coming via o_to_perhaps_c from @ARGV):
 for my $chfile (sort keys %depends) {
     if (suffix($chfile) eq 'c') {
         my $ofile = "target/".basename($chfile);
         $ofile =~ s/\.c\z/.o/ or die "bug";
         xprint "$ofile:";
-        # track down ALL dependencies; but only once each
+        # Print all dependencies, also indirect ones; but each only
+        # once for this $ofile:
         my $seen= {};
         printdeps_for($chfile, $seen);
         xprintln;
