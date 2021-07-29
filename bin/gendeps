@@ -32,10 +32,11 @@ sub usage {
   make syntax of the dependencies.
 
   It also generates (overwrites) the file run_tests.c if
-  target/run_tests.o is given.
+  target/run_tests.o or --run-tests is given.
 
   Options:
 
+    --run-tests  Generate run_tests.c, even when run_tests.o isn't given
     -I path   Path to search for source files. Can be given multiple times.
               Default if none given: '.'
     --trap    Use FP::Repl::Trap.
@@ -49,9 +50,11 @@ our $verbose=0;
 #our $opt_dry;
 our $opt_trap;
 our @opt_dirs;
+our $opt_run_tests;
 GetOptions("verbose"=> \$verbose,
 	   "help"=> sub{usage},
            "trap"=> \$opt_trap,
+           "run-tests"=> \$opt_run_tests,
            "I=s"=> sub {
                my ($k,$v)=@_;
                push @opt_dirs, $v;
@@ -127,7 +130,9 @@ my @c_files = map {
     o_to_perhaps_c $_
 } @ARGV;
 
-my $need_run_tests = exists +{ map {$_ => 1} @c_files }->{"run_tests.c"};
+my $need_run_tests =
+    ($opt_run_tests
+     or exists +{ map {$_ => 1} @c_files }->{"run_tests.c"});
 
 my @direct_deps = map { chfile_dependencies($_) } @c_files;
 
