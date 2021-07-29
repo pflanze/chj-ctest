@@ -25,7 +25,7 @@ BEGIN {
 }
 use lib $mydir;
 use FP::Predicates qw(instance_of);
-use Chj::CTest qw(path_to_FIL);
+use Chj::CTest qw(path_to_canonical_relpath path_to_FIL);
 
 sub usage {
     print STDERR map{"$_\n"} @_ if @_;
@@ -76,7 +76,7 @@ our @dirs = @opt_dirs ? @opt_dirs : ".";
 
 sub subpath_perhaps_find($orig_subpath, $subpath, $maybe_subpath_s, $constr) {
     for my $dir (@dirs) {
-        my $pp = "$dir/$subpath";
+        my $pp = path_to_canonical_relpath "$dir/$subpath";
         return $constr->($pp) if -e $pp;
         return () if (defined $maybe_subpath_s
                       and -e "$dir/$maybe_subpath_s");
