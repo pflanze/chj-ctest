@@ -81,7 +81,7 @@ typedef void * ptr;
 
 #define __test_fmt_int "%i"   
 #define __test_fmt_int16_t "%i"
-#define __test_fmt_uint16_t "%ui"
+#define __test_fmt_uint16_t "%u"
 #define __test_fmt_int8_t "%i" // XX?
 #define __test_fmt_uint8_t "%i"
 #define __test_fmt_bool "%i"
