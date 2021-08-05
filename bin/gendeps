@@ -271,17 +271,17 @@ sub add_missing {
 
 do {} while add_missing;
 
-# Print dependencies for $chfile onto a single line, but this is part
+# Print dependencies for $chpath onto a single line, but this is part
 # of the right-hand side, for another .o file; $seen is used to avoid
 # indirect dependencies from showing up multiple times.
-sub printdeps_for($chfile, $seen) {
-    my $d = $depends{$chfile} or return;
+sub printdeps_for($chpath, $seen) {
+    my $d = $depends{$chpath} or return;
     # ^ OK, if foo.h has no includes then not here
-    for my $chfile (sort keys %$d) {
-        next if $seen->{$chfile};
-        $seen->{$chfile}= 1;
-        xprint " $chfile";
-        printdeps_for($chfile, $seen);
+    for my $chpath (sort keys %$d) {
+        next if $seen->{$chpath};
+        $seen->{$chpath}= 1;
+        xprint " $chpath";
+        printdeps_for($chpath, $seen);
     }
 }
 
