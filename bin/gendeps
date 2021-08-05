@@ -271,6 +271,12 @@ sub add_missing {
 
 do {} while add_missing;
 
+
+sub without_leading_dotslash($path) {
+    $path =~ s{^\./+}{};
+    $path
+}
+
 # Print dependencies for $chpath onto a single line, but this is part
 # of the right-hand side, for another .o file; $seen is used to avoid
 # indirect dependencies from showing up multiple times.
@@ -280,7 +286,10 @@ sub printdeps_for($chpath, $seen) {
     for my $chpath (sort keys %$d) {
         next if $seen->{$chpath};
         $seen->{$chpath}= 1;
-        xprint " $chpath";
+        # Strip leading "./" so that make will find manually written
+        # target definitions (nobody will write those with a leading
+        # ./):
+        xprint " ", without_leading_dotslash($chpath);
         printdeps_for($chpath, $seen);
     }
 }
