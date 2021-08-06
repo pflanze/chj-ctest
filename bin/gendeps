@@ -29,7 +29,7 @@ use Chj::CTest qw(path_to_canonical_relpath path_to_FIL);
 
 sub usage {
     print STDERR map{"$_\n"} @_ if @_;
-    print STDERR "$myname [-I path] target/foo.o ...
+    print STDERR "$myname [-I path] target.../foo.o ...
 
   Parses the .c and .h files it finds via the given .o files, prints
   make syntax of the dependencies.
@@ -92,7 +92,7 @@ sub o_to_perhaps_c ($path) {
     # returns () for .s files; exception if not found
     my $p = $path;
     $p=~ s/\.o$// or die "invalid object path '$path'";
-    $p=~ s{^target/+}{} or die "invalid object path '$path'";
+    $p=~ s{^target[^/]*/+}{} or die "invalid object path '$path'";
     my $c = "$p.c";
     if ($c eq "run_tests.c") {
         CFile("./$c") # XX shouldn't that be ignored?
