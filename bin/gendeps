@@ -88,11 +88,22 @@ sub subpath_perhaps_find($orig_subpath, $subpath, $maybe_subpath_s, $constr) {
         .singlequote_many(@dirs);
 }
 
+my $target;
+
 sub o_to_perhaps_c ($path) {
     # returns () for .s files; exception if not found
     my $p = $path;
     $p=~ s/\.o$// or die "invalid object path '$path'";
-    $p=~ s{^target[^/]*/+}{} or die "invalid object path '$path'";
+    if ($p=~ s{^(target[^/]*)/+}{}) {
+        if (defined $target) {
+            $target eq $1
+                or die "target dir isn't constant, was '$target', now '$1'";
+        } else {
+            $target = $1
+        }
+    } else {
+        die "invalid object path '$path'";
+    }
     my $c = "$p.c";
     if ($c eq "run_tests.c") {
         CFile("./$c") # XX shouldn't that be ignored?
@@ -304,7 +315,7 @@ sub suffix($file) {
 # from @c_files which is coming via o_to_perhaps_c from @ARGV):
 for my $chpath (sort keys %depends) {
     if (suffix($chpath) eq 'c') {
-        my $ofile = "target/".basename($chpath);
+        my $ofile = $target."/".basename($chpath);
         $ofile =~ s/\.c\z/.o/ or die "bug";
         xprint "$ofile:";
         # Print all dependencies, also indirect ones; but each only
