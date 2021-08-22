@@ -16,7 +16,9 @@ void __test_assert_eq_fmt16_failure(const char* fmt,
                                     uint16_t v1, uint16_t v2) {
     __test_assert_eq_failure(file, line, e1, e2);
     printf("   ");
+#ifdef __GCC__
 #pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif
     printf(fmt, v1);
     printf(" == ");
     printf(fmt, v2);
