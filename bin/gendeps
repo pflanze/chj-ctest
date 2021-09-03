@@ -44,6 +44,10 @@ sub usage {
               Default if none given: '.'
     --trap    Use FP::Repl::Trap.
 
+  Environment:
+
+    noTEST    If set, ignore all tests.
+
   ($email_full)
 ";
 exit (@_ ? 1 : 0);
@@ -65,6 +69,8 @@ GetOptions("verbose"=> \$verbose,
 	   #"dry-run"=> \$opt_dry,
 	   ) or exit 1;
 usage unless @ARGV;
+
+my $notest = exists $ENV{noTEST};
 
 if ($opt_trap) {
     require FP::Repl::Trap;
@@ -328,6 +334,7 @@ for my $chpath (sort keys %depends) {
 
 
 sub line_to_perhaps_test($line) {
+    return () if ($notest);
     if (my ($cfun) = /^\s*TEST\s*\(\s*(\w+)\s*\)\s*\{/) {
         $cfun
     } else {

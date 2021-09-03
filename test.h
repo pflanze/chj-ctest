@@ -9,7 +9,15 @@ struct TestStatistics {
 
 #define TEST__(file, name) void __test_##file##name(struct TestStatistics *__test_stats)
 #define TEST_(file, name) TEST__(file, name)
-#define TEST(name) TEST_(FIL, name)
+
+// Turn test code into a function that is going to be optimized away.
+#define NOTEST(name) inline static void __test_##file##name(struct TestStatistics *__test_stats)
+
+#ifdef noTEST
+# define TEST(name) NOTEST(name)
+#else
+# define TEST(name) TEST_(FIL, name)
+#endif
 
 // How can we generically print the result? In gcc we can get the type
 // and statically dispatch, but here? Simply can't, right. Could as
