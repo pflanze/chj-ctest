@@ -42,7 +42,7 @@ void __test_assert_eq_fmt32_failure(const char* fmt,
 void run_test_(struct TestStatistics* stats,
                const char* testname_file,
                test_function_t test) {
-    printf("Test %s\n", testname_file);
+    printf("- Test %s ...\n", testname_file);
     test(stats);
 }
 
