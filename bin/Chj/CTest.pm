@@ -1,6 +1,5 @@
-# Copyright 2021 by Christian Jaeger <ch@christianjaeger.ch>
-# Published under the same terms as perl itself
-#
+# Copyright (C) 2021 Christian Jaeger, <ch@christianjaeger.ch>
+# Published under the terms of the MIT License, see the LICENSE file.
 
 =head1 NAME
 

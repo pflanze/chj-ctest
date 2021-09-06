@@ -1,3 +1,9 @@
+/*
+  Copyright (C) 2021 Christian Jaeger, <ch@christianjaeger.ch>
+  Published under the terms of the MIT License, see the LICENSE file.
+*/
+#ifndef TEST_H_
+#define TEST_H_
 
 #include <stdint.h>
 
@@ -110,3 +116,4 @@ typedef void * ptr;
 #define __test_t_for_int32_t int32_t
 #define __test_t_for_uint32_t uint32_t
 
+#endif /* TEST_H_ */
